@@ -1,0 +1,35 @@
+.error-boundary {
+  background-color: #fee2e2;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2xl);
+  margin: var(--spacing-lg) 0;
+  text-align: center;
+}
+
+.error-boundary h2 {
+  color: var(--color-danger);
+  margin-bottom: var(--spacing-md);
+}
+
+.error-boundary p {
+  color: #991b1b;
+  margin-bottom: var(--spacing-lg);
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.error-boundary button {
+  background-color: var(--color-danger);
+  color: white;
+  border: none;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity var(--transition-base);
+}
+
+.error-boundary button:hover {
+  opacity: 0.9;
+}
