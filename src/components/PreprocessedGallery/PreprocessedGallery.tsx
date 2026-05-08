@@ -1,48 +1,27 @@
-import { Card, CardContent, Grid, Typography, Box, Paper } from '@mui/material';
-import { PreprocessingStages } from '../../services/types';
-import './PreprocessedGallery.css';
+import './PreprocessedGallery.css'
+import ImagePreview from '../ImagePreview/ImagePreview'
+import type { PreprocessingStages } from '../../services/types'
 
-interface PreprocessedGalleryProps {
-  stages: PreprocessingStages;
-}
+interface Props { stages: PreprocessingStages }
 
-export default function PreprocessedGallery({ stages }: PreprocessedGalleryProps) {
-  const stageList = [
-    { title: 'Original', url: stages.original_url },
-    { title: 'Grayscale', url: stages.grayscale_url },
-    { title: 'Denoised', url: stages.denoised_url },
-    { title: 'Enhanced', url: stages.enhanced_url },
-    { title: 'Sharpened', url: stages.sharpened_url },
-    { title: 'Normalized', url: stages.normalized_url },
-  ];
+export default function PreprocessedGallery({ stages }: Props) {
+  const items = [
+    { src: stages.original_url, label: 'Original' },
+    { src: stages.grayscale_url, label: 'Grayscale' },
+    { src: stages.denoised_url, label: 'Denoised' },
+    { src: stages.enhanced_url, label: 'CLAHE Enhanced' },
+    { src: stages.sharpened_url, label: 'Sharpened' },
+    { src: stages.normalized_url, label: 'Normalized' }
+  ]
 
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Preprocessing Stages
-        </Typography>
-        <Grid container spacing={2}>
-          {stageList.map((stage) => (
-            <Grid item xs={12} sm={6} md={4} key={stage.title}>
-              <Paper sx={{ overflow: 'hidden' }}>
-                <img
-                  src={stage.url}
-                  alt={stage.title}
-                  style={{
-                    width: '100%',
-                    height: 200,
-                    objectFit: 'cover',
-                  }}
-                />
-                <Box sx={{ p: 1, textAlign: 'center', bgcolor: '#f5f5f5' }}>
-                  <Typography variant="subtitle2">{stage.title}</Typography>
-                </Box>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-      </CardContent>
-    </Card>
-  );
+    <div className="gallery-card">
+      <h3 className="gallery-title">Preprocessing Pipeline</h3>
+      <div className="gallery-grid">
+        {items.map((item) => (
+          <ImagePreview key={item.label} src={item.src} label={item.label} />
+        ))}
+      </div>
+    </div>
+  )
 }

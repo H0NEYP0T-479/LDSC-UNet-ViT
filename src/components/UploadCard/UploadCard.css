@@ -1,75 +1,32 @@
 .upload-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-2xl);
-  box-shadow: var(--shadow-sm);
-  max-width: 500px;
-  margin: var(--spacing-2xl) auto;
-}
-
-.upload-card h2 {
-  margin-bottom: var(--spacing-lg);
-  color: var(--color-text);
-}
-
-.upload-area {
+  background: var(--color-bg-card);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
 }
 
-.upload-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-2xl);
-  border: 2px dashed var(--color-border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-base);
-  background-color: var(--color-background);
+.upload-card:hover, .upload-card.drag-over {
+  border-color: var(--color-primary);
+  background: rgba(79,142,247,0.05);
 }
 
-.upload-label:hover {
-  border-color: var(--primary-500);
-  background-color: var(--primary-50);
-}
+.upload-placeholder { display: flex; flex-direction: column; gap: 0.5rem; }
+.upload-icon { font-size: 2.5rem; }
+.upload-hint { font-size: 0.8rem; color: var(--color-text-muted); }
+.upload-preview { max-height: 200px; border-radius: var(--radius-sm); object-fit: contain; }
 
-.upload-icon {
-  font-size: 2.5rem;
-  margin-bottom: var(--spacing-md);
-}
-
-.upload-label p {
-  margin: var(--spacing-sm) 0;
-  color: var(--color-text);
-  font-weight: 500;
-}
-
-.upload-hint {
-  color: var(--color-text-light);
-  font-size: 0.875rem;
-  font-weight: normal;
-}
-
-.file-input {
-  display: none;
-}
-
-.loading,
-.error {
-  margin-top: var(--spacing-md);
-  text-align: center;
-  padding: var(--spacing-md);
-  border-radius: var(--radius-md);
-}
-
-.loading {
-  color: var(--primary-600);
-  background-color: var(--primary-50);
-}
-
-.error {
-  color: var(--color-danger);
-  background-color: #fee2e2;
+.upload-loading {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius);
+  font-weight: 600; color: var(--color-primary);
 }

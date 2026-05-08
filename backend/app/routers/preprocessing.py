@@ -1,56 +1,27 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from fastapi.responses import JSONResponse
-import cv2
-import numpy as np
-from pathlib import Path
-
-from app.config import Settings
-from app.preprocessing import LDSCPreprocessor
+from app.utils.preprocessing import LDSCPreprocessor
 from app.services.storage_service import StorageService
-from app.logging_config import get_logger
+from app.config import settings
+
+router = APIRouter(prefix="/api", tags=["Preprocessing"])
+preprocessor = LDSCPreprocessor()
+storage = StorageService(settings.artifacts_dir, settings.uploads_dir)
 
 
-logger = get_logger(__name__)
-router = APIRouter(prefix='/api')
-
-
-@router.post('/preprocess')
+@router.post("/preprocess")
 async def preprocess_image(file: UploadFile = File(...)):
+    """Preprocess uploaded X-ray and return stage image URLs."""
     try:
-        settings = Settings()
-        storage_service = StorageService(settings.ARTIFACTS_DIR, settings.UPLOADS_DIR)
-        
-        file_bytes = await file.read()
-        if not file_bytes:
-            raise HTTPException(status_code=400, detail="Empty file uploaded")
-        
-        nparr = np.frombuffer(file_bytes, np.uint8)
-        image = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
-        
-        if image is None:
-            raise HTTPException(status_code=422, detail="Failed to decode image")
-        
-        logger.info(f"Processing uploaded image: {file.filename}")
-        
-        preprocessor = LDSCPreprocessor()
-        stages = preprocessor.get_stages(image)
-        
-        stage_urls = {}
-        for stage_name, stage_image in stages.items():
-            try:
-                url = storage_service.save_artifact(stage_image, f"preprocessing_{stage_name}")
-                stage_urls[f"{stage_name}_url"] = url
-            except Exception as e:
-                logger.error(f"Failed to save {stage_name} stage: {e}")
-                raise HTTPException(status_code=500, detail=f"Failed to save {stage_name} stage")
-        
-        logger.info(f"Successfully preprocessed image: {file.filename}")
-        
-        return stage_urls
-    
-    except HTTPException as e:
-        logger.error(f"HTTP Exception in preprocessing: {e.detail}")
-        raise
+        contents = await file.read()
+        image_path = storage.save_upload(contents, file.filename)
+        stages = preprocessor.get_stages(image_path)
+        return {
+            "original_url": storage.save_artifact(stages["original"], "original"),
+            "grayscale_url": storage.save_artifact(stages["grayscale"], "grayscale"),
+            "denoised_url": storage.save_artifact(stages["denoised"], "denoised"),
+            "enhanced_url": storage.save_artifact(stages["enhanced"], "enhanced"),
+            "sharpened_url": storage.save_artifact(stages["sharpened"], "sharpened"),
+            "normalized_url": storage.save_artifact(stages["normalized"], "normalized")
+        }
     except Exception as e:
-        logger.error(f"Unexpected error in preprocessing: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during preprocessing")
+        raise HTTPException(status_code=500, detail=str(e))

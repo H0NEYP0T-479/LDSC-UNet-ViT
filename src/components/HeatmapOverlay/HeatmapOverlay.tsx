@@ -1,32 +1,16 @@
-import { Card, CardContent, Typography, Box, Paper } from '@mui/material';
-import './HeatmapOverlay.css';
+import './HeatmapOverlay.css'
+import ImagePreview from '../ImagePreview/ImagePreview'
 
-interface HeatmapOverlayProps {
-  imageUrl: string;
-}
+interface Props { overlayUrl: string }
 
-export default function HeatmapOverlay({ imageUrl }: HeatmapOverlayProps) {
+export default function HeatmapOverlay({ overlayUrl }: Props) {
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Grad-CAM Heatmap
-        </Typography>
-        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-          Visualization of regions contributing to the classification decision
-        </Typography>
-        <Paper sx={{ overflow: 'hidden' }}>
-          <img
-            src={imageUrl}
-            alt="Grad-CAM Heatmap"
-            style={{
-              width: '100%',
-              height: 'auto',
-              display: 'block',
-            }}
-          />
-        </Paper>
-      </CardContent>
-    </Card>
-  );
+    <div className="heatmap-card">
+      <h3 className="heatmap-title">GradCAM Heatmap</h3>
+      <p className="heatmap-desc">
+        Red regions indicate areas the ViT model focused on for classification.
+      </p>
+      <ImagePreview src={overlayUrl} label="GradCAM Overlay" />
+    </div>
+  )
 }

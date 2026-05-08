@@ -1,81 +1,56 @@
-import { Card, CardContent, Typography, Box, LinearProgress, Grid, Chip } from '@mui/material';
-import { ClassificationResult } from '../../services/types';
-import './PredictionCard.css';
+import './PredictionCard.css'
+import type { ClassificationResult } from '../../services/types'
 
-interface PredictionCardProps {
-  classification: ClassificationResult;
+const CLASS_COLORS: Record<string, string> = {
+  normal: '#22c55e',
+  pneumonia: '#f59e0b',
+  covid19: '#ef4444',
+  tuberculosis: '#a855f7'
 }
 
-export default function PredictionCard({ classification }: PredictionCardProps) {
-  const classColors: Record<string, 'default' | 'error' | 'warning' | 'info' | 'success'> = {
-    normal: 'success',
-    pneumonia: 'warning',
-    covid19: 'error',
-    tuberculosis: 'error',
-  };
+const CLASS_ICONS: Record<string, string> = {
+  normal: '✅',
+  pneumonia: '🫁',
+  covid19: '🦠',
+  tuberculosis: '⚠️'
+}
+
+interface Props { result: ClassificationResult }
+
+export default function PredictionCard({ result }: Props) {
+  const color = CLASS_COLORS[result.predicted_class] || '#4f8ef7'
 
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Disease Classification
-        </Typography>
-
-        <Box sx={{ mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-          <Typography variant="body2" color="textSecondary" gutterBottom>
-            Predicted Class
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Chip
-              label={classification.predicted_class.toUpperCase()}
-              color={classColors[classification.predicted_class] || 'default'}
-              variant="filled"
-            />
-            <Box>
-              <Typography variant="body2" color="textSecondary">
-                Confidence
-              </Typography>
-              <Typography variant="h6">
-                {(classification.confidence * 100).toFixed(2)}%
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-
-        <Typography variant="subtitle2" gutterBottom>
-          Class Probabilities
-        </Typography>
-        <Grid container spacing={2}>
-          {Object.entries(classification.probabilities).map(([className, probability]) => (
-            <Grid item xs={12} key={className}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2" sx={{ minWidth: 100, textTransform: 'capitalize' }}>
-                  {className}
-                </Typography>
-                <Box sx={{ flex: 1 }}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={probability * 100}
-                    sx={{
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: '#e0e0e0',
-                      '& .MuiLinearProgress-bar': {
-                        borderRadius: 4,
-                        backgroundColor:
-                          probability > 0.5 ? '#d32f2f' : probability > 0.2 ? '#ff9800' : '#388e3c',
-                      },
-                    }}
-                  />
-                </Box>
-                <Typography variant="body2" sx={{ minWidth: 50, textAlign: 'right' }}>
-                  {(probability * 100).toFixed(1)}%
-                </Typography>
-              </Box>
-            </Grid>
-          ))}
-        </Grid>
-      </CardContent>
-    </Card>
-  );
+    <div className="prediction-card">
+      <h3 className="prediction-title">Classification Result</h3>
+      <div className="prediction-main" style={{ borderColor: color }}>
+        <span className="prediction-icon">
+          {CLASS_ICONS[result.predicted_class] || '🔬'}
+        </span>
+        <div>
+          <div className="prediction-class" style={{ color }}>
+            {result.predicted_class.toUpperCase()}
+          </div>
+          <div className="prediction-confidence">
+            Confidence: {(result.confidence * 100).toFixed(1)}%
+          </div>
+        </div>
+      </div>
+      <div className="prediction-probs">
+        {Object.entries(result.probabilities).map(([cls, prob]) => (
+          <div key={cls} className="prob-row">
+            <span className="prob-label">{cls}</span>
+            <div className="prob-bar-bg">
+              <div className="prob-bar-fill"
+                style={{
+                  width: `${(prob * 100).toFixed(1)}%`,
+                  background: CLASS_COLORS[cls] || '#4f8ef7'
+                }} />
+            </div>
+            <span className="prob-value">{(prob * 100).toFixed(1)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }

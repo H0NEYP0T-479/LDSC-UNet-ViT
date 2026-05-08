@@ -1,83 +1,39 @@
 .prediction-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  margin: var(--spacing-lg) 0;
+  background: var(--color-bg-card);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--color-card-shadow);
 }
 
-.prediction-card h3 {
-  margin-bottom: var(--spacing-lg);
-  color: var(--color-text);
+.prediction-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
 }
 
-.prediction-results {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  background-color: var(--color-background);
-  border-radius: var(--radius-md);
-}
-
-.prediction-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.prediction-item .label {
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-.prediction-item .value {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: var(--primary-600);
-}
-
-.probabilities h4 {
-  margin-bottom: var(--spacing-md);
-  color: var(--color-text);
-}
-
-.prob-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.prob-item {
+.prediction-main {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: 1rem;
+  padding: 1rem;
+  border: 2px solid;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.5rem;
 }
 
-.prob-item span {
-  width: 100px;
-  font-size: 0.875rem;
-  color: var(--color-text);
+.prediction-icon { font-size: 2rem; }
+.prediction-class { font-size: 1.4rem; font-weight: 700; }
+.prediction-confidence { font-size: 0.85rem; color: var(--color-text-muted); }
+
+.prob-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
-.prob-bar {
-  flex: 1;
-  height: 8px;
-  background-color: var(--color-border);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.prob-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
-  width: 0%;
-  transition: width var(--transition-base);
-}
-
-@media (max-width: 768px) {
-  .prediction-results {
-    grid-template-columns: 1fr;
-  }
-}
+.prob-label { width: 100px; font-size: 0.85rem; text-transform: capitalize; }
+.prob-bar-bg { flex: 1; height: 8px; background: var(--color-border); border-radius: 4px; overflow: hidden; }
+.prob-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+.prob-value { width: 45px; font-size: 0.8rem; text-align: right; color: var(--color-text-muted); }
