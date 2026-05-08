@@ -1,190 +1,116 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torch.optim import Adam
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-from tqdm import tqdm
-from pathlib import Path
-
-from app.models.unet.model import UNetLung
+import os
+from app.models.unet_lung.model import UNetLung
 from app.models.unet_lung.datamodule import get_seg_dataloaders
-from app.utils.metrics import dice_score
-from app.logging_config import get_logger
 
 
-logger = get_logger(__name__)
+def dice_loss(pred: torch.Tensor, target: torch.Tensor, smooth: float = 1.0) -> torch.Tensor:
+    """Compute Dice loss."""
+    pred = pred.view(-1)
+    target = target.view(-1)
+    intersection = (pred * target).sum()
+    return 1 - (2 * intersection + smooth) / (pred.sum() + target.sum() + smooth)
 
 
-def dice_loss(pred, target, smooth=1.0):
-    pred_flat = pred.view(-1)
-    target_flat = target.view(-1)
-    
-    intersection = (pred_flat * target_flat).sum()
-    
-    dice = (2.0 * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth)
-    
-    return 1.0 - dice
-
-
-def bce_dice_loss(pred, target):
-    bce = F.binary_cross_entropy(pred, target)
+def bce_dice_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """Combined BCE + Dice loss."""
+    bce = nn.BCELoss()(pred, target)
     dice = dice_loss(pred, target)
-    
-    return 0.5 * bce + 0.5 * dice
+    return bce + dice
 
 
 def train_one_epoch(model, loader, optimizer, criterion, device):
+    """Train for one epoch, return loss and dice score."""
     model.train()
-    total_loss = 0.0
-    total_dice = 0.0
-    
-    progress_bar = tqdm(loader, desc='Training', leave=False)
-    
-    for images, masks in progress_bar:
-        images = images.to(device)
-        masks = masks.to(device)
-        
+    total_loss, total_dice = 0, 0
+    for images, masks in loader:
+        images, masks = images.to(device), masks.to(device)
         optimizer.zero_grad()
-        
-        logits = model(images)
-        loss = criterion(logits, masks)
-        
+        preds = model(images)
+        loss = criterion(preds, masks)
         loss.backward()
         optimizer.step()
-        
         total_loss += loss.item()
-        
-        with torch.no_grad():
-            pred_binary = (logits > 0.5).float()
-            dice = dice_score(pred_binary, masks)
-        
+        pred_bin = (preds > 0.5).float()
+        intersection = (pred_bin * masks).sum()
+        dice = (2 * intersection) / (pred_bin.sum() + masks.sum() + 1e-8)
         total_dice += dice.item()
-        
-        progress_bar.set_postfix({
-            'loss': loss.item(),
-            'dice': dice.item()
-        })
-    
-    epoch_loss = total_loss / len(loader)
-    epoch_dice = total_dice / len(loader)
-    
-    return epoch_loss, epoch_dice
+    return total_loss / len(loader), total_dice / len(loader)
 
 
 def validate(model, loader, criterion, device):
+    """Validate model, return loss and dice score."""
     model.eval()
-    total_loss = 0.0
-    total_dice = 0.0
-    
-    progress_bar = tqdm(loader, desc='Validation', leave=False)
-    
+    total_loss, total_dice = 0, 0
     with torch.no_grad():
-        for images, masks in progress_bar:
-            images = images.to(device)
-            masks = masks.to(device)
-            
-            logits = model(images)
-            loss = criterion(logits, masks)
-            
+        for images, masks in loader:
+            images, masks = images.to(device), masks.to(device)
+            preds = model(images)
+            loss = criterion(preds, masks)
             total_loss += loss.item()
-            
-            pred_binary = (logits > 0.5).float()
-            dice = dice_score(pred_binary, masks)
+            pred_bin = (preds > 0.5).float()
+            intersection = (pred_bin * masks).sum()
+            dice = (2 * intersection) / (pred_bin.sum() + masks.sum() + 1e-8)
             total_dice += dice.item()
-            
-            progress_bar.set_postfix({
-                'loss': loss.item(),
-                'dice': dice.item()
-            })
-    
-    epoch_loss = total_loss / len(loader)
-    epoch_dice = total_dice / len(loader)
-    
-    return epoch_loss, epoch_dice
+    return total_loss / len(loader), total_dice / len(loader)
 
 
-def train(config):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    logger.info(f"Using device: {device}")
-    
+def train(config: dict):
+    """Main UNet training loop."""
+    device = config.get("device", "cpu")
+    model = UNetLung(in_channels=1, out_channels=1).to(device)
     train_loader, val_loader = get_seg_dataloaders(
-        image_dir=config['image_dir'],
-        mask_dir=config['mask_dir'],
-        batch_size=config['batch_size'],
-        train_split=config['train_split'],
-        image_size=config['image_size'],
-        num_workers=config['num_workers'],
-        pin_memory=True
+        config["image_dir"], config["mask_dir"], config["batch_size"]
     )
-    
-    model = UNetLung(
-        in_channels=1,
-        out_channels=1,
-        features=config['features']
-    ).to(device)
-    
-    criterion = bce_dice_loss
-    optimizer = Adam(model.parameters(), lr=config['learning_rate'])
-    scheduler = ReduceLROnPlateau(
-        optimizer,
-        mode='max',
-        factor=0.5,
-        patience=5,
-        verbose=True
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, patience=3, factor=0.5
     )
-    
-    checkpoint_dir = Path(config['checkpoint_dir']) / 'unet_lung'
-    checkpoint_dir.mkdir(parents=True, exist_ok=True)
-    
-    best_val_dice = 0.0
+    best_dice = 0
     patience_counter = 0
-    
-    for epoch in range(config['num_epochs']):
-        logger.info(f"Epoch {epoch + 1}/{config['num_epochs']}")
-        
+
+    os.makedirs(config["checkpoint_dir"], exist_ok=True)
+
+    for epoch in range(config["epochs"]):
         train_loss, train_dice = train_one_epoch(
-            model, train_loader, optimizer, criterion, device
+            model, train_loader, optimizer, bce_dice_loss, device
         )
-        
-        val_loss, val_dice = validate(model, val_loader, criterion, device)
-        
-        logger.info(
-            f"Train Loss: {train_loss:.4f}, Train Dice: {train_dice:.4f} | "
-            f"Val Loss: {val_loss:.4f}, Val Dice: {val_dice:.4f}"
+        val_loss, val_dice = validate(
+            model, val_loader, bce_dice_loss, device
         )
-        
-        scheduler.step(val_dice)
-        
-        if val_dice > best_val_dice:
-            best_val_dice = val_dice
+        scheduler.step(val_loss)
+
+        print(f"Epoch {epoch+1}/{config['epochs']} | "
+              f"Train Loss: {train_loss:.4f} Dice: {train_dice:.4f} | "
+              f"Val Loss: {val_loss:.4f} Dice: {val_dice:.4f}")
+
+        if val_dice > best_dice:
+            best_dice = val_dice
+            torch.save(
+                model.state_dict(),
+                os.path.join(config["checkpoint_dir"], "unet_lung_best.pth")
+            )
             patience_counter = 0
-            torch.save(model.state_dict(), checkpoint_dir / 'unet_lung_best.pth')
-            logger.info(f"Saved best model to {checkpoint_dir / 'unet_lung_best.pth'}")
         else:
             patience_counter += 1
-            logger.info(f"Patience: {patience_counter}/{config['early_stopping_patience']}")
-        
-        if patience_counter >= config['early_stopping_patience']:
-            logger.info(f"Early stopping at epoch {epoch + 1}")
-            break
-    
-    logger.info("Training completed")
-    return model
+            if patience_counter >= config.get("patience", 10):
+                print("Early stopping triggered.")
+                break
+
+    torch.save(
+        model.state_dict(),
+        os.path.join(config["checkpoint_dir"], "unet_lung_last.pth")
+    )
 
 
-if __name__ == '__main__':
-    config = {
-        'image_dir': 'data/lungs/images',
-        'mask_dir': 'data/lungs/masks',
-        'checkpoint_dir': 'checkpoints',
-        'batch_size': 16,
-        'num_epochs': 100,
-        'learning_rate': 1e-3,
-        'train_split': 0.8,
-        'image_size': 256,
-        'num_workers': 4,
-        'features': [64, 128, 256, 512],
-        'early_stopping_patience': 10
-    }
-    
-    train(config)
+if __name__ == "__main__":
+    train({
+        "device": "cuda" if torch.cuda.is_available() else "cpu",
+        "image_dir": "backend/app/resources/dataset/segmentation/images",
+        "mask_dir": "backend/app/resources/dataset/segmentation/masks",
+        "checkpoint_dir": "backend/app/resources/checkpoints/unet_lung",
+        "batch_size": 16,
+        "epochs": 100,
+        "patience": 10
+    })

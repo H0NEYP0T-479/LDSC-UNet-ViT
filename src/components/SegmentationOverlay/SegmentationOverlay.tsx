@@ -1,71 +1,25 @@
-import { Card, CardContent, Grid, Typography, Box, Paper } from '@mui/material';
-import { SegmentationResult } from '../../services/types';
-import './SegmentationOverlay.css';
+import './SegmentationOverlay.css'
+import ImagePreview from '../ImagePreview/ImagePreview'
+import type { SegmentationResult } from '../../services/types'
 
-interface SegmentationOverlayProps {
-  segmentation: SegmentationResult;
-}
+interface Props { result: SegmentationResult }
 
-export default function SegmentationOverlay({ segmentation }: SegmentationOverlayProps) {
+export default function SegmentationOverlay({ result }: Props) {
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Lung Segmentation Results
-        </Typography>
-        <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid item xs={12} sm={6}>
-            <Paper sx={{ overflow: 'hidden' }}>
-              <img
-                src={segmentation.mask_url}
-                alt="Segmentation Mask"
-                style={{
-                  width: '100%',
-                  height: 300,
-                  objectFit: 'cover',
-                }}
-              />
-              <Box sx={{ p: 1, textAlign: 'center', bgcolor: '#f5f5f5' }}>
-                <Typography variant="subtitle2">Segmentation Mask</Typography>
-              </Box>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <Paper sx={{ overflow: 'hidden' }}>
-              <img
-                src={segmentation.overlay_url}
-                alt="Overlay"
-                style={{
-                  width: '100%',
-                  height: 300,
-                  objectFit: 'cover',
-                }}
-              />
-              <Box sx={{ p: 1, textAlign: 'center', bgcolor: '#f5f5f5' }}>
-                <Typography variant="subtitle2">Overlay</Typography>
-              </Box>
-            </Paper>
-          </Grid>
-        </Grid>
-        <Box sx={{ bgcolor: '#f5f5f5', p: 2, borderRadius: 1 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="body2" color="textSecondary">
-                Disease Detected
-              </Typography>
-              <Typography variant="h6" sx={{ color: segmentation.disease_detected ? '#d32f2f' : '#388e3c' }}>
-                {segmentation.disease_detected ? 'Yes' : 'No'}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="body2" color="textSecondary">
-                Affected Area
-              </Typography>
-              <Typography variant="h6">{segmentation.area_percentage.toFixed(2)}%</Typography>
-            </Grid>
-          </Grid>
-        </Box>
-      </CardContent>
-    </Card>
-  );
+    <div className="seg-card">
+      <h3 className="seg-title">Segmentation Result</h3>
+      <div className="seg-status">
+        <span className={`seg-badge ${result.disease_detected ? 'badge-danger' : 'badge-success'}`}>
+          {result.disease_detected ? '⚠️ Disease Detected' : '✅ No Disease Detected'}
+        </span>
+        <span className="seg-area">
+          Affected Area: <strong>{result.area_percentage.toFixed(2)}%</strong>
+        </span>
+      </div>
+      <div className="seg-images">
+        <ImagePreview src={result.mask_url} label="Segmentation Mask" />
+        <ImagePreview src={result.overlay_url} label="Overlay" />
+      </div>
+    </div>
+  )
 }

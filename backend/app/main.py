@@ -1,100 +1,54 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
-
-from app.config import Settings
-from app.logging_config import setup_logging, get_logger
+import os
+from app.config import settings
+from app.logging_config import setup_logging
 from app.routers import health, preprocessing, segmentation, classification
-from app.services.pipeline_service import PipelineService
-
-
-logger = get_logger(__name__)
-settings = Settings()
+from app.services.pipeline_service import get_instance
 
 app = FastAPI(
-    title="LDSC-UNet-ViT API",
-    description="Lung Disease Segmentation and Classification using UNet and Vision Transformer",
-    version="1.0.0",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc"
+    title=settings.project_name,
+    version=settings.version,
+    description="Lung Disease Segmentation and Classification API"
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
 
-artifacts_path = Path(settings.ARTIFACTS_DIR)
-artifacts_path.mkdir(parents=True, exist_ok=True)
-app.mount("/artifacts", StaticFiles(directory=str(artifacts_path)), name="artifacts")
+os.makedirs(settings.artifacts_dir, exist_ok=True)
+app.mount("/artifacts", StaticFiles(directory=settings.artifacts_dir), name="artifacts")
 
-app.include_router(health.router, tags=["health"])
-app.include_router(preprocessing.router, tags=["preprocessing"])
-app.include_router(segmentation.router, tags=["segmentation"])
-app.include_router(classification.router, tags=["classification"])
+app.include_router(health.router)
+app.include_router(preprocessing.router)
+app.include_router(segmentation.router)
+app.include_router(classification.router)
 
 
 @app.on_event("startup")
-async def startup_event():
-    """
-    Application startup event handler.
-    
-    Initializes the application by:
-    - Setting up structured logging with configured log level
-    - Loading ViT and UNet models via PipelineService singleton
-    - Validating model checkpoints are available
-    
-    Raises:
-        Exception: If logging setup or model loading fails
-    """
+async def startup():
+    setup_logging(settings.log_level)
+    pipeline = get_instance(settings)
     try:
-        setup_logging(settings.LOG_LEVEL)
-        logger.info("Logging configured successfully")
-        
-        pipeline_service = PipelineService.get_instance(settings)
-        pipeline_service.load_models()
-        logger.info("Models loaded successfully on startup")
+        pipeline.load_models()
     except Exception as e:
-        logger.error(f"Startup error: {e}")
-        raise
+        print(f"Warning: Models not loaded - {e}")
 
 
 @app.on_event("shutdown")
-async def shutdown_event():
-    """
-    Application shutdown event handler.
-    
-    Performs cleanup on application shutdown:
-    - Logs shutdown event
-    - Releases model resources
-    - Closes file handles
-    """
-    logger.info("Application shutting down")
+async def shutdown():
+    print("Shutting down LDSC-UNet-ViT API")
 
 
 @app.get("/")
 async def root():
-    """
-    Root endpoint - returns welcome message and API information.
-    
-    Returns:
-        dict: Welcome message with API version, description, and endpoint URLs
-    """
     return {
-        "message": "LDSC-UNet-ViT API",
-        "description": "Lung Disease Segmentation and Classification using UNet and Vision Transformer",
-        "version": "1.0.0",
-        "endpoints": {
-            "health": "/api/health",
-            "preprocessing": "/api/preprocess",
-            "segmentation": "/api/segment",
-            "classification": "/api/classify",
-            "full_inference": "/api/inference",
-            "docs": "/api/docs",
-            "artifacts": "/artifacts"
-        }
+        "message": "Welcome to LDSC-UNet-ViT API",
+        "version": settings.version,
+        "docs": "/docs"
     }

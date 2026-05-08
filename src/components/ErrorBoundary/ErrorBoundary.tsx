@@ -1,52 +1,30 @@
-import { Component, ReactNode } from 'react';
-import { Container, Box, Typography, Button, Alert } from '@mui/material';
-import './ErrorBoundary.css';
+import { Component, ReactNode } from 'react'
 
-interface Props {
-  children: ReactNode;
-}
+interface Props { children: ReactNode }
+interface State { hasError: boolean; error?: Error }
 
-interface State {
-  hasError: boolean;
-  error: Error | null;
-}
-
-export default class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+class ErrorBoundary extends Component<Props, State> {
+  state: State = { hasError: false }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+    return { hasError: true, error }
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <Container maxWidth="sm" sx={{ py: 8 }}>
-          <Box sx={{ textAlign: 'center' }}>
-            <Alert severity="error" sx={{ mb: 2 }}>
-              <Typography variant="h5" sx={{ mb: 1 }}>
-                Something went wrong
-              </Typography>
-              <Typography variant="body2">{this.state.error?.message}</Typography>
-            </Alert>
-            <Button
-              variant="contained"
-              onClick={() => this.setState({ hasError: false, error: null })}
-            >
-              Try again
-            </Button>
-          </Box>
-        </Container>
-      );
+        <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444' }}>
+          <h2>Something went wrong</h2>
+          <p>{this.state.error?.message}</p>
+          <button onClick={() => this.setState({ hasError: false })}
+            style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
+            Try Again
+          </button>
+        </div>
+      )
     }
-
-    return this.props.children;
+    return this.props.children
   }
 }
+
+export default ErrorBoundary
