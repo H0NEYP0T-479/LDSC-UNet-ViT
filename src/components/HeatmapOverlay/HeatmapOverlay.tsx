@@ -1,24 +1,32 @@
-import React from 'react';
+import { Card, CardContent, Typography, Box, Paper } from '@mui/material';
 import './HeatmapOverlay.css';
 
-export const HeatmapOverlay: React.FC = () => {
+interface HeatmapOverlayProps {
+  imageUrl: string;
+}
+
+export default function HeatmapOverlay({ imageUrl }: HeatmapOverlayProps) {
   return (
-    <div className="heatmap-overlay">
-      <h3>Grad-CAM Heatmap</h3>
-      <p className="description">
-        Visualization of regions contributing to the classification decision
-      </p>
-      <div className="heatmap-container">
-        <div className="heatmap-item">
-          <p>Original Image</p>
-        </div>
-        <div className="heatmap-item">
-          <p>Heatmap</p>
-        </div>
-        <div className="heatmap-item">
-          <p>Overlay</p>
-        </div>
-      </div>
-    </div>
+    <Card>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          Grad-CAM Heatmap
+        </Typography>
+        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+          Visualization of regions contributing to the classification decision
+        </Typography>
+        <Paper sx={{ overflow: 'hidden' }}>
+          <img
+            src={imageUrl}
+            alt="Grad-CAM Heatmap"
+            style={{
+              width: '100%',
+              height: 'auto',
+              display: 'block',
+            }}
+          />
+        </Paper>
+      </CardContent>
+    </Card>
   );
-};
+}
