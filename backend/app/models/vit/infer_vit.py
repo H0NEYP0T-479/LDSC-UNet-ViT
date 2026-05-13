@@ -4,7 +4,12 @@ from app.models.vit.model import LDSCViT
 from app.utils.preprocessing import LDSCPreprocessor
 
 
-CLASS_NAMES = ["normal", "pneumonia", "covid19", "tuberculosis"]
+CLASS_NAMES = [
+    "COVID-19",
+    "Normal",
+    "Lung Opacity",
+    "Viral Pneumonia"
+]
 
 
 class ViTInference:
