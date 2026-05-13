@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     unet_image_size: int = 256
 
     # Classes
-    class_names: list[str] = ["normal", "pneumonia", "covid19", "tuberculosis"]
+    class_names: list[str] = ["covid19","normal", "lung_opacity","viral_pneumonia"]
 
     # Device
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
