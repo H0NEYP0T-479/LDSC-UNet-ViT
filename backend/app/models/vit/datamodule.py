@@ -4,7 +4,12 @@ from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
 
 
-CLASS_NAMES = ["normal", "pneumonia", "covid19", "tuberculosis"]
+CLASS_NAMES = [
+    "COVID-19", 
+    "Normal", 
+    "Lung Opacity", 
+    "Viral Pneumonia"
+]
 
 
 class LDSCDataset(Dataset):

@@ -6,7 +6,12 @@ import timm
 class LDSCViT(nn.Module):
     """Vision Transformer classifier for lung disease classification."""
 
-    CLASS_NAMES = ["normal", "pneumonia", "covid19", "tuberculosis"]
+    CLASS_NAMES = [
+    "covid19", 
+    "normal", 
+    "lung_opacity", 
+    "viral_pneumonia"
+]
 
     def __init__(self, num_classes: int = 4, pretrained: bool = True):
         super().__init__()
