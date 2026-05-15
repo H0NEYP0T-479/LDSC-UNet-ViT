@@ -22,5 +22,25 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
 # Dataset
 backend/app/resources/dataset/
+
+# Model checkpoints
+backend/app/resources/checkpoints/
+
+# Uploads and artifacts
+backend/app/resources/uploads/
+backend/app/resources/artifacts/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pth
+*.pth.tar
+.env
+
+# Virtual environment
+venv/
+env/
+.venv/
