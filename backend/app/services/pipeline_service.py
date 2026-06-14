@@ -80,6 +80,7 @@ class PipelineService:
         unet_result = self.unet.predict_from_path(image_path)
         mask = unet_result["mask"]
         original_gray = stages["grayscale"]
+        mask = cv2.resize(mask, (original_gray.shape[1], original_gray.shape[0]))
         overlay = create_overlay(original_gray, mask)
 
         segmentation = SegmentationResult(
